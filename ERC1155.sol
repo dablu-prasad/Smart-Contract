@@ -144,10 +144,11 @@ contract NFT_MarketPlace is ERC1155, Ownable,ReentrancyGuard {
 /**Transfer ownership of the item, as well as funds between partied */
 function createMarketSale( uint256 itemId,uint256 amount) public payable  nonReentrant
 {
+      address seller = idToMarketItem[itemId].seller;
+    //   address owner = idToMarketItem[itemId].owner;
+       require(seller!=msg.sender,"Seller don't buy its own Token" );
         uint256 price = idToMarketItem[itemId].price;
-    
-      //  address owner = idToMarketItem[itemId].owner;
-        address seller = idToMarketItem[itemId].seller;
+           
         uint256 tokenId = idToMarketItem[itemId].tokenId;
         require(msg.value == price, "Please sumbit the asking price in order to complete the purchase");
 
@@ -223,21 +224,6 @@ function createMarketSale( uint256 itemId,uint256 amount) public payable  nonRee
         _safeTransferFrom(from, to, id, amount, data);
     }
 
-    function onERC1155Received(
-        address _operator,
-        address _from,
-        uint256 _id,
-        uint256 _value,
-        bytes calldata _data
-    ) external returns (bytes4) {
-        return
-            bytes4(
-                keccak256(
-                    "onERC1155Received(address,address,uint256,uint256,bytes)"
-                )
-            );
-    }
-
 // Get URI link of any Token.
   function uri(uint256 tokenId) public view virtual override returns (string memory) {
         string memory tokenURI = _tokenURIs[tokenId];
@@ -263,16 +249,11 @@ function createMarketSale( uint256 itemId,uint256 amount) public payable  nonRee
     {
         uint256 tokenId = idToMarketItem[itemId].tokenId;
          address owner = idToMarketItem[itemId].owner;
-         require(owner==msg.sender || owner==address(this),"Only owner can burn the Token");
+         bool sold = idToMarketItem[itemId].sold;
+         require(owner==msg.sender || (owner==address(this) && sold==false),"Only owner can burn the Token");
         _burn(owner,tokenId,amount);
         //  uint256 amt= _balances[itemId][owner];
         //  console.log("amt:",amt);
-        // if(amt==0)
-        // {
-        //    address sel= idToMarketItem[itemId].seller;
-        //   address own=  idToMarketItem[itemId].owner;
-        //     _safeTransferFrom(sel, own, tokenId, amt, "");
-        // }
     }   
 
 
@@ -351,8 +332,6 @@ function _burn(
 
       //  _doSafeTransferAcceptanceCheck(operator, from, to, id, amount, data);
     }
-
-    
 
         function _asSingletonArray1(uint256 element) private pure returns (uint256[] memory) {
         uint256[] memory array = new uint256[](1);
